@@ -20,7 +20,7 @@ const JoinMissionSection: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [currentUserReferralCode, setCurrentUserReferralCode] = useState('');
-  const [initialReferrerCode, setInitialReferrerCode] = useState<string | null>(null);
+  const [referredByCode, setReferredByCode] = useState<string | null>(null);
   const [submissionMessage, setSubmissionMessage] = useState('');
 
   const sectionRef = useRef<HTMLElement>(null);
@@ -38,7 +38,7 @@ const JoinMissionSection: React.FC = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const refCodeFromUrl = urlParams.get('ref');
     if (refCodeFromUrl) {
-      setInitialReferrerCode(refCodeFromUrl.toUpperCase());
+      setReferredByCode(refCodeFromUrl.toUpperCase());
     }
   }, []);
 
@@ -54,9 +54,14 @@ const JoinMissionSection: React.FC = () => {
     setSubmissionMessage('');
 
     try {
-      const payload = {
+      const payload: any = {
         wallet_address: walletAddress.trim(),
       };
+
+      // Add referral code if user came from a referral link
+      if (referredByCode) {
+        payload.referred_by = referredByCode;
+      }
 
       const response = await fetch(`${API_BASE_URL}/register`, {
         method: 'POST',
@@ -189,9 +194,9 @@ const JoinMissionSection: React.FC = () => {
                     placeholder={isConnected && connectedAddress ? connectedAddress : "0x..."}
                     required
                   />
-                  {initialReferrerCode && (
+                  {referredByCode && (
                     <p className="text-xs text-magenta-glow mt-2 animate-fadeIn">
-                      Recruited via Alliance Code: {initialReferrerCode}
+                      Recruited via Alliance Code: {referredByCode}
                     </p>
                   )}
                    {isConnected && connectedAddress && walletAddress === connectedAddress && (
@@ -271,7 +276,7 @@ const JoinMissionSection: React.FC = () => {
                     } else {
                         setWalletAddress('');
                     }
-                    setInitialReferrerCode(null);
+                    // Keep the referral code from URL if it exists
                   }} 
                   className="mt-8"
                 >
