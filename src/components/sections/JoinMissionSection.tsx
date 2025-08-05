@@ -6,15 +6,13 @@ import { useSoundContext } from '../../contexts/SoundContext';
 import { toast } from 'sonner';
 import { useAccount } from 'wagmi';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = 'https://cigarapi.up.railway.app';
 
 interface ApiResponse {
-  status: string;
+  success: boolean;
   message: string;
   wallet_address: string;
-  points: number;
-  user_referral_code?: string;
-  invited_by_wallet_address?: string | null;
+  referral_code?: string;
 }
 
 const JoinMissionSection: React.FC = () => {
@@ -56,31 +54,27 @@ const JoinMissionSection: React.FC = () => {
     setSubmissionMessage('');
 
     try {
-      const payload: { wallet_address: string; referral_code_used?: string | null } = {
+      const payload = {
         wallet_address: walletAddress.trim(),
       };
-      if (initialReferrerCode) {
-        payload.referral_code_used = initialReferrerCode;
-      }
 
       const response = await fetch(`${API_BASE_URL}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'accept': 'application/json',
         },
         body: JSON.stringify(payload),
       });
 
       const data: ApiResponse = await response.json();
 
-      if (response.ok && data.status === 'success') {
-        setCurrentUserReferralCode(data.user_referral_code || '');
+      if (response.ok && data.success) {
+        setCurrentUserReferralCode(data.referral_code || '');
         setSubmissionMessage(data.message || 'Registration confirmed, Ally! Welcome to the $CIGAR Initiative.');
         setIsSubmitted(true);
         toast.success(data.message || 'Registration successful!', { position: 'bottom-center' });
       } else {
-        const errorMessage = typeof data.detail === 'string' ? data.detail : data.message || 'Registration failed. Please try again.';
+        const errorMessage = data.message || 'Registration failed. Please try again.';
         toast.error(errorMessage, { position: 'bottom-center' });
       }
     } catch (error) {
@@ -118,8 +112,7 @@ const JoinMissionSection: React.FC = () => {
 
   const referralLink = useMemo(() => {
     if (!currentUserReferralCode) return '';
-    // Pastikan URL dasar benar, hapus index.html jika ada, dan tambahkan query param
-    const baseUrl = window.location.origin + window.location.pathname.replace(/index\.html$/, '');
+    const baseUrl = window.location.origin;
     return `${baseUrl}?ref=${currentUserReferralCode}`;
   }, [currentUserReferralCode]);
 
@@ -278,13 +271,7 @@ const JoinMissionSection: React.FC = () => {
                     } else {
                         setWalletAddress('');
                     }
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const refCodeFromUrl = urlParams.get('ref');
-                    if (refCodeFromUrl) {
-                      setInitialReferrerCode(refCodeFromUrl.toUpperCase());
-                    } else {
-                      setInitialReferrerCode(null);
-                    }
+                    setInitialReferrerCode(null);
                   }} 
                   className="mt-8"
                 >
